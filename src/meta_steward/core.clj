@@ -1,12 +1,14 @@
 (ns meta-steward.core
-  (:gen-class) 
+  (:gen-class)
   (:import
    [java.io RandomAccessFile]
    [com.coremedia.iso IsoFile]
    [com.coremedia.iso.boxes UserDataBox MetaBox]
    [com.coremedia.iso.boxes.apple AppleItemListBox AppleStringBox]))
 
-(defn remove-title [filePath]
+(defmulti steward #(first %&))
+
+(defmethod steward :remove-title [_ filePath]
   (let [raf (RandomAccessFile. filePath "rw")
         isoFile (IsoFile. (.getChannel raf))
         moov (.getMovieBox isoFile)
@@ -20,6 +22,9 @@
       (-> isoFile (.writeContainer (-> raf .getChannel))))
     (.close isoFile)))
 
+(defmethod steward :update-mp3-meta-from-path [_ filePath]
+ )
+
 (defn -main
-  [& _]
-  (remove-title "path/to/your/video.mp4"))
+  [& args]
+  (apply steward (map read-string args)))
