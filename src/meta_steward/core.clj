@@ -4,7 +4,8 @@
    [java.io RandomAccessFile]
    [com.coremedia.iso IsoFile]
    [com.coremedia.iso.boxes UserDataBox MetaBox]
-   [com.coremedia.iso.boxes.apple AppleItemListBox AppleStringBox]))
+   [com.coremedia.iso.boxes.apple AppleItemListBox AppleStringBox]
+   [com.mpatric.mp3agic Mp3File]))
 
 (defmulti steward #(first %&))
 
@@ -21,6 +22,19 @@
       (-> raf (.getChannel) (.position 0))
       (-> isoFile (.writeContainer (-> raf .getChannel))))
     (.close isoFile)))
+
+(defmethod steward :view-mp3-metadata [_ filePath]
+  (let [mp3File (Mp3File. filePath)
+        id3v2Tag (.getId3v2Tag mp3File)]
+    (println "track: " (.getTrack id3v2Tag))
+    (println "title: " (.getTitle id3v2Tag))
+    (println "artist: " (.getArtist id3v2Tag))
+    (println "album: " (.getAlbum id3v2Tag))
+    (println "album artist: " (.getAlbumArtist id3v2Tag))
+    (println "composer: " (.getComposer id3v2Tag))
+    (println "original artist: " (.getOriginalArtist id3v2Tag))
+    (println "year: " (.getYear id3v2Tag))
+    (println "genre: " (.getGenre id3v2Tag) ": (" (.getGenreDescription id3v2Tag) ")")))
 
 (defmethod steward :update-mp3-meta-from-path [_ filePath]
  )
