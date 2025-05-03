@@ -6,6 +6,7 @@
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [org.mp4parser/isoparser "1.9.27"]
                  [com.mpatric/mp3agic "0.9.1"]]
+  :java-source-paths ["src/java"]
   :main ^:skip-aot meta-steward.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all
