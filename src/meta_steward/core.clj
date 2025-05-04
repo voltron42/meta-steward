@@ -4,7 +4,7 @@
    [clojure.java.io :as io]) 
   (:import
    [com.mpatric.mp3agic Mp3File]
-   [java.io FileNotFoundException RandomAccessFile]
+   [java.io File FileNotFoundException RandomAccessFile]
    [java.nio ByteBuffer]
    [java.nio.channels Channels]
    [java.nio.file Paths]
@@ -33,20 +33,47 @@
                 temp
                 (recur (rest allBoxes))
                 ))
-            (recur (rest allBoxes)))))))
-  )
+            (recur (rest allBoxes))))))))
+
 (defn- needsOffsetCorrection [isoFile]
-  ; todo
-  )
+  (if-not (nil? (Paths/get isoFile "moov[0][/mvex[0]"))
+    false
+    (let [result (loop [boxes (.getBoxes isoFile)]
+                   (if (empty? boxes)
+                     {}
+                     (if (= "moov" (.getType (first boxes)))
+                       {:result true}
+                       (if (= "mdat" (.getType (first boxes)))
+                         {:result false}
+                         (recur (rest boxes))))))]
+      (if (contains? result :result)
+        (:result result)
+        (throw (Exception. "I need moov or mdat. Otherwise all this doesn't make sense"))))))
+
 (defn- correctChunkOffsets [movieBox correction]
   (let [chunkOffsetBoxes (Paths/get movieBox "trak/mdia[0]/minf[0]/stbl[0]/stco[0]")
         chunkOffsetBoxes (if-not (empty? chunkOffsetBoxes) 
                            chunkOffsetBoxes
-                           (Paths/get movieBox "trak/mdia[0]/minf[0]/stbl[0]/st64[0]))]))
+                           (Paths/get movieBox "trak/mdia[0]/minf[0]/stbl[0]/st64[0]"))]
+    (doseq [chunkOffsetBox chunkOffsetBoxes]
+      (.setChunkOffsets
+       chunkOffsetBox
+       (map #(+ correction %)
+            (.getChunkOffsets chunkOffsetBox))))))
 
-(defn- splitFileAndInsert [videoFile offset arg3]
-  ; todo
-  )
+(defn- splitFileAndInsert [file position length]
+  (let [read (.getChannel (RandomAccessFile. file "r"))
+        tmp (File/createTempFile "ChangeMetaData" "splitFileAndInsert")
+        tmpWrite (.getChannel (RandomAccessFile. tmp "rw"))]
+    (.position read position)
+    (.transferFrom tmpWrite read 0 (- (.size read) position))
+    (.close read)
+    (let [write (.getChannel (RandomAccessFile. file "rw"))]
+      (.position write (+ position length))
+      (.position tmpWrite 0)
+      (.close tmpWrite)
+      (.delete tmp)
+      write)))
 
 (defmethod steward :remove-title [_ filePath]
   (let [videoFile (io/file filePath)]
@@ -115,6 +142,9 @@
               (.position offset)
               (.write (ByteBuffer/wrap (.getBuffer baos) 0 (.size baos)))
               (.close))))))))
+
+(defmethod steward :view-mp4-title [_ filePath]
+  )
 
 (defmethod steward :view-mp3-metadata [_ filePath]
   (let [mp3File (Mp3File. filePath)
