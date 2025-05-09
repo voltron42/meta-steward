@@ -1,7 +1,13 @@
 (ns meta-steward.core-test
-  (:require [clojure.test :refer :all]
-            [meta-steward.core :refer :all]))
+  (:require
+   [clojure.test :as t]
+   [meta-steward.core :as core]))
 
-(deftest a-test
-  (testing "FIXME, I fail."
-    (is (= 0 1))))
+(t/deftest test-view-mp4-titles
+  (t/testing "testing viewing mp4 titles"
+    (core/steward-by-option :deep :view-mp4-title "resources/video")))
+
+(t/deftest test-view-mp3-metadata
+  (t/testing "testing viewing mp3 metadata"
+    (core/steward-by-option :deep :view-mp3-metadata "resources/audio")))
+

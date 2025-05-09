@@ -1,4 +1,6 @@
-(ns meta-steward.mp3)
+(ns meta-steward.mp3 
+  (:import
+   [com.mpatric.mp3agic Mp3File]))
 
 (defn view-mp3-metadata [filePath]
   (let [mp3File (Mp3File. filePath)
